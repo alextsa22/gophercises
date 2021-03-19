@@ -1,2 +1,3 @@
 # gophercises
-Golang course from Сalhoun.io
+
+Golang course from [Сalhoun.io](https://courses.calhoun.io).
