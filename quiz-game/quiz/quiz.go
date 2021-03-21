@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -21,7 +22,7 @@ type Quiz struct {
 	timeLimit time.Duration
 }
 
-func NewQuiz(filename string, timeLimit int) (*Quiz, error) {
+func NewQuiz(filename string, timeLimit int, shuffle bool) (*Quiz, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -42,7 +43,22 @@ func NewQuiz(filename string, timeLimit int) (*Quiz, error) {
 		qs = append(qs, question{record[0], cleanLine(record[1])})
 	}
 
+	if shuffle {
+		shuffleQuestions(qs)
+	}
+
 	return &Quiz{qs, time.Duration(timeLimit)}, nil
+}
+
+// Knuth Fisher-Yates shuffle
+func shuffleQuestions(qs []question) {
+	rand.Seed(time.Now().Unix())
+
+	l := len(qs)
+	for i := 0; i < l; i++ {
+		r := i + rand.Intn(l-i)
+		qs[r], qs[i] = qs[i], qs[r]
+	}
 }
 
 type answer struct {
