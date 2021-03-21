@@ -8,4 +8,5 @@ Golang course from [Сalhoun.io](https://courses.calhoun.io).
 Exercises
 ---------
 
-1. [Quiz Game](quiz-game/README.md)
+1. [Quiz Game](quiz-game)
+0. [URL Shortener](urlshort)
