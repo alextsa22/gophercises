@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/alextsa22/gophercises/urlshort/shorter"
+	"github.com/alextsa22/gophercises/02-urlshort/shorter"
 	"log"
 	"net/http"
 	"path/filepath"

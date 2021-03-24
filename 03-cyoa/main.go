@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/alextsa22/gophercises/cyoa/story"
+	"github.com/alextsa22/gophercises/03-cyoa/story"
 	"html/template"
 	"log"
 	"net/http"

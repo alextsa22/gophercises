@@ -8,6 +8,6 @@ Golang course from [Сalhoun.io](https://courses.calhoun.io).
 Exercises
 ---------
 
-1. [Quiz Game](quiz-game)
-0. [URL Shortener](urlshort)
+1. [Quiz Game](01-quiz-game)
+0. [URL Shortener](02-urlshort)
 0. [Choose your own adventure](cyoa)

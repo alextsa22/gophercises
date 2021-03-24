@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/alextsa22/gophercises/quiz-game/quiz"
+	"github.com/alextsa22/gophercises/01-quiz-game/quiz"
 	"log"
 )
 
