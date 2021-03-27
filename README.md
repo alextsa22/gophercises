@@ -13,3 +13,4 @@ Exercises
 0. [Choose Your Own Adventure](03-cyoa)
 0. [HTML Link Parser](04-link)
 0. [Sitemap Builder](05-sitemap)
+0. [Hacker Rank Problems - strings and bytes](06-hr1)
