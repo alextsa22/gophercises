@@ -10,6 +10,12 @@ and algorithms, that you can do so in your free time.
 We will be tackling two different problems on the site, neither of which are incredibly difficult, but it should help
 you become familiar with the site while also giving you some experience manipulating and working with strings in Go.
 
+Problems
+--------
+
++ [CamelCase](https://www.hackerrank.com/challenges/camelcase/problem)
++ [Caesar Cipher](https://www.hackerrank.com/challenges/caesar-cipher-1/problem)
+
 Full information
 ----------------
 
