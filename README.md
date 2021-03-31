@@ -3,7 +3,7 @@
 Description
 -----------
 
-Golang course from [Сalhoun.io](https://courses.calhoun.io).
+Golang course from [gophercises.com](https://gophercises.com/).
 
 Exercises
 ---------
