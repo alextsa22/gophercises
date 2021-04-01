@@ -16,3 +16,4 @@ Exercises
 0. [Hacker Rank Problems - strings and bytes](06-hr1)
 0. [CLI Task Manager](07-task)
 0. [Phone Number Normalizer](08-phone)
+0. [Deck of Cards](09-deck)
