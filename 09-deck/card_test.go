@@ -1,6 +1,9 @@
 package _9_deck
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+)
 
 func ExampleCard() {
 	fmt.Println(Card{Rank: Ace, Suit: Heart})
@@ -15,4 +18,28 @@ func ExampleCard() {
 	// Nine of Diamonds
 	// Jack of Clubs
 	// Joker
+}
+
+func TestNew(t *testing.T) {
+	cards := New()
+
+	if len(cards) != 13*4 {
+		t.Error("wrong number of cards in a new deck")
+	}
+}
+
+func TestDefaultSort(t *testing.T) {
+	cards := New(DefaultSort)
+	firstCard := Card{Rank: Ace, Suit: Spade}
+	if cards[0] != firstCard {
+		t.Error("expected ace fo spades as first card. received:", cards[0])
+	}
+}
+
+func TestSort(t *testing.T) {
+	cards := New(Sort(Less))
+	firstCard := Card{Rank: Ace, Suit: Spade}
+	if cards[0] != firstCard {
+		t.Error("expected ace fo spades as first card. received:", cards[0])
+	}
 }
