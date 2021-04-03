@@ -17,3 +17,4 @@ Exercises
 0. [CLI Task Manager](07-task)
 0. [Phone Number Normalizer](08-phone)
 0. [Deck of Cards](09-deck)
+0. [Blackjack Game](10-blackjack)
