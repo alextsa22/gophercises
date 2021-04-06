@@ -1,6 +1,7 @@
 package blackjack
 
 import (
+	"errors"
 	"fmt"
 
 	deck "github.com/alextsa22/gophercises/09-deck"
@@ -106,11 +107,23 @@ func (g *Game) Play(ai AI) int {
 
 		deal(g)
 
+		if Blackjack(g.dealer...) {
+			endHand(g, ai)
+			continue
+		}
+
 		for g.state == statePlayerTurn {
 			hand := make([]deck.Card, len(g.player))
 			copy(hand, g.player)
 			move := ai.Play(hand, g.dealer[0])
-			move(g)
+			err := move(g)
+			switch err {
+			case nil: // noop
+			case errBust:
+				MoveStand(g)
+			default:
+				panic(err)
+			}
 		}
 
 		for g.state == stateDealerTurn {
@@ -126,9 +139,13 @@ func (g *Game) Play(ai AI) int {
 	return g.balance
 }
 
-type Move func(*Game)
+var (
+	errBust = errors.New("hand score exceeded 21")
+)
 
-func MoveHit(g *Game) {
+type Move func(*Game) error
+
+func MoveHit(g *Game) error {
 	hand := g.currentHand()
 
 	var card deck.Card
@@ -136,11 +153,25 @@ func MoveHit(g *Game) {
 	*hand = append(*hand, card)
 	if Score(*hand...) > 21 {
 		MoveStand(g)
+		return errBust
 	}
+
+	return nil
 }
 
-func MoveStand(g *Game) {
+func MoveStand(g *Game) error {
 	g.state++
+	return nil
+}
+
+func MoveDouble(g *Game) error {
+	if len(g.player) != 2 {
+		return errors.New("can only double on a hand with 2 cards")
+	}
+
+	g.playerBet *= 2
+	MoveHit(g)
+	return MoveStand(g)
 }
 
 func draw(cards []deck.Card) (deck.Card, []deck.Card) {
@@ -149,10 +180,17 @@ func draw(cards []deck.Card) (deck.Card, []deck.Card) {
 
 func endHand(g *Game, ai AI) {
 	pScore, dScore := Score(g.player...), Score(g.dealer...)
+	playerBlackjack, dealerBlackjack := Blackjack(g.player...), Blackjack(g.dealer...)
 	winnings := g.playerBet
 
 	fmt.Println()
 	switch {
+	case playerBlackjack && dealerBlackjack:
+		winnings = 0
+	case dealerBlackjack:
+		winnings = -winnings
+	case playerBlackjack:
+		winnings = int(float64(winnings) * g.blackjackPayout)
 	case pScore > 21:
 		fmt.Println("you busted")
 		winnings = -winnings
@@ -198,6 +236,11 @@ func Soft(hand ...deck.Card) bool {
 	minScore := minScore(hand...)
 	score := Score(hand...)
 	return minScore != score
+}
+
+// Blackjack returns true if a hand is a blackjack
+func Blackjack(hand ...deck.Card) bool {
+	return len(hand) == 2 && Score(hand...) == 21
 }
 
 func minScore(hand ...deck.Card) int {
