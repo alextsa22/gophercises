@@ -2,8 +2,6 @@ package blackjack
 
 import (
 	"errors"
-	"fmt"
-
 	deck "github.com/alextsa22/gophercises/09-deck"
 )
 
@@ -70,7 +68,6 @@ func (g *Game) currentHand() *[]deck.Card {
 	switch g.state {
 	case statePlayerTurn:
 		return &g.player[g.handIdx].cards
-		// return &g.player
 	case stateDealerTurn:
 		return &g.dealer
 	default:
@@ -80,12 +77,16 @@ func (g *Game) currentHand() *[]deck.Card {
 
 func bet(g *Game, ai AI, shuffled bool) {
 	bet := ai.Bet(shuffled)
+	if bet < 100 {
+		panic("bet must be at least 100")
+	}
+
 	g.playerBet = bet
 }
 
 func deal(g *Game) {
-	//g.player = make([]deck.Card, 0, 5)
 	playerHand := make([]deck.Card, 0, 5)
+	g.handIdx = 0
 	g.dealer = make([]deck.Card, 0, 5)
 
 	var card deck.Card
@@ -96,10 +97,6 @@ func deal(g *Game) {
 		g.dealer = append(g.dealer, card)
 	}
 
-	playerHand = []deck.Card{
-		{Rank: deck.Seven},
-		{Rank: deck.Seven},
-	}
 	g.player = []hand{
 		{
 			cards: playerHand,
@@ -196,7 +193,7 @@ func MoveStand(g *Game) error {
 }
 
 func MoveDouble(g *Game) error {
-	if len(g.player) != 2 {
+	if len(*g.currentHand()) != 2 {
 		return errors.New("can only double on a hand with 2 cards")
 	}
 
@@ -237,7 +234,6 @@ func endRound(g *Game, ai AI) {
 		playerScore, playerBlackjack := Score(cards...), Blackjack(cards...)
 		winnings := hand.bet
 
-		fmt.Println()
 		switch {
 		case playerBlackjack && dealerBlackjack:
 			winnings = 0
@@ -246,20 +242,14 @@ func endRound(g *Game, ai AI) {
 		case playerBlackjack:
 			winnings = int(float64(winnings) * g.blackjackPayout)
 		case playerScore > 21:
-			fmt.Println("you busted")
 			winnings = -winnings
 		case dealerScore > 21:
-			fmt.Println("dealer busted")
 		case playerScore > dealerScore:
-			fmt.Println("you win!")
 		case dealerScore > playerScore:
-			fmt.Println("you lose")
 			winnings = -winnings
 		case dealerScore == playerScore:
-			fmt.Println("draw")
 			winnings = 0
 		}
-		fmt.Println()
 
 		g.balance += winnings
 	}
