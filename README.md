@@ -19,3 +19,4 @@ Exercises
 0. [Deck of Cards](09-deck)
 0. [Blackjack Game](10-blackjack)
 0. [Blackjack AI](11-blackjack-ai)
+0. [File Renaming Tool](12-renamer)
