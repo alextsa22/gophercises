@@ -2,19 +2,46 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 func main() {
-	filename := "birthday_001.txt"
-	newName, err := match(filename, 4)
+	dir := "sample"
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		log.Fatalf("no match, received: %s", err)
+		log.Fatal(err)
 	}
 
-	fmt.Println(newName)
+	count := 0
+	var toRename []string
+	for _, file := range files {
+		if !file.IsDir() {
+			if _, err := match(file.Name(), 0); err == nil {
+				count++
+				toRename = append(toRename, file.Name())
+			}
+		}
+	}
+
+	for _, origFilename := range toRename {
+		origPath := filepath.Join(dir, origFilename)
+		newFilename, err := match(origFilename, count)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		newPath := filepath.Join(dir, newFilename)
+		fmt.Printf("mv %s => %s\n", origPath, newPath)
+
+		if err = os.Rename(origPath, newPath); err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 // match returns the new filename, or an error if the filename
