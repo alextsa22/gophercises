@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/alextsa22/gophercises/13-quiet-hn/hn"
@@ -32,9 +33,32 @@ func main() {
 }
 
 func handler(numStories int, tpl *template.Template) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	sc := storyCache{
+		numStories: numStories,
+		duration:   6 * time.Second,
+	}
+
+	go func() {
+		ticker := time.NewTicker(3 * time.Second)
+		for {
+			tmp := storyCache{
+				numStories: numStories,
+				duration:   6 * time.Second,
+			}
+			tmp.stories()
+
+			sc.mutex.Lock()
+			sc.cache = tmp.cache
+			sc.expiration = tmp.expiration
+			sc.mutex.Unlock()
+
+			<-ticker.C
+		}
+	}()
+
+	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		stories, err := getCachedStories(numStories)
+		stories, err := sc.stories()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -49,28 +73,34 @@ func handler(numStories int, tpl *template.Template) http.HandlerFunc {
 			http.Error(w, "Failed to process the template", http.StatusInternalServerError)
 			return
 		}
-	})
+	}
 }
 
-var (
-	cache           []item
-	cacheExpiration time.Time
-)
+type storyCache struct {
+	numStories int
+	cache      []item
+	expiration time.Time
+	duration   time.Duration
+	mutex      sync.Mutex
+}
 
-func getCachedStories(numStories int) ([]item, error) {
-	if time.Now().Sub(cacheExpiration) < 0 {
-		return cache, nil
+func (c *storyCache) stories() ([]item, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if time.Now().Sub(c.expiration) < 0 {
+		return c.cache, nil
 	}
 
-	stories, err := getTopStories(numStories)
+	stories, err := getTopStories(c.numStories)
 	if err != nil {
 		return nil, err
 	}
 
-	cache = stories
-	cacheExpiration = time.Now().Add(15 * time.Second)
+	c.expiration = time.Now().Add(c.duration)
+	c.cache = stories
 
-	return cache, nil
+	return c.cache, nil
 }
 
 func getTopStories(numStories int) ([]item, error) {
