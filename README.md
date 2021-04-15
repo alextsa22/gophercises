@@ -21,3 +21,4 @@ Exercises
 0. [Blackjack AI](11-blackjack-ai)
 0. [File Renaming Tool](12-renamer)
 0. [Quiet HN](13-quiet-hn)
+0. [Panic/Recover Middleware](14-recover)
