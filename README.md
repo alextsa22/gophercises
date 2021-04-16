@@ -22,3 +22,4 @@ Exercises
 0. [File Renaming Tool](12-renamer)
 0. [Quiet HN](13-quiet-hn)
 0. [Panic/Recover Middleware](14-recover)
+0. [Panic/Recover Middleware with Chroma](15-recover-chroma)
