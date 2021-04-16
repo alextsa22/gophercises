@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"runtime/debug"
 )
@@ -44,22 +46,37 @@ type responseWriter struct {
 	status int
 }
 
-func (w responseWriter) Write(b []byte) (int, error) {
-	w.writes = append(w.writes, b)
+func (rw responseWriter) Write(b []byte) (int, error) {
+	rw.writes = append(rw.writes, b)
 	return len(b), nil
 }
 
-func (w responseWriter) WriteHeader(statusCode int) {
-	w.status = statusCode
+func (rw responseWriter) WriteHeader(statusCode int) {
+	rw.status = statusCode
 }
 
-func (w responseWriter) flush() error {
-	if w.status != 0 {
-		w.ResponseWriter.WriteHeader(w.status)
+func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := rw.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, fmt.Errorf("the ResponseWriter does not support the Hijacker interface")
+	}
+	return hijacker.Hijack()
+}
+
+func (rw *responseWriter) Flush() {
+	flusher, ok := rw.ResponseWriter.(http.Flusher)
+	if ok {
+		flusher.Flush()
+	}
+}
+
+func (rw responseWriter) flush() error {
+	if rw.status != 0 {
+		rw.ResponseWriter.WriteHeader(rw.status)
 	}
 
-	for _, write := range w.writes {
-		if _, err := w.ResponseWriter.Write(write); err != nil {
+	for _, write := range rw.writes {
+		if _, err := rw.ResponseWriter.Write(write); err != nil {
 			return err
 		}
 	}
