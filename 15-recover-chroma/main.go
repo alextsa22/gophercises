@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/alecthomas/chroma/quick"
 	"io"
 	"log"
 	"net/http"
@@ -25,7 +27,14 @@ func sourceCodeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	io.Copy(w, file)
+
+	b := bytes.NewBuffer(nil)
+	if _, err = io.Copy(b, file); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	quick.Highlight(w, b.String(), "go", "html", "monokai")
 }
 
 func devMw(app http.Handler) http.HandlerFunc {
