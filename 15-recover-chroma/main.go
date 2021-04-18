@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/alecthomas/chroma/quick"
+	"github.com/alecthomas/chroma/formatters/html"
+	"github.com/alecthomas/chroma/lexers"
+	"github.com/alecthomas/chroma/styles"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 )
 
@@ -23,6 +26,12 @@ func main() {
 
 func sourceCodeHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.FormValue("path")
+	lineParam := r.FormValue("line")
+	line, err := strconv.Atoi(lineParam)
+	if err != nil {
+		line = -1
+	}
+
 	file, err := os.Open(path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -35,7 +44,26 @@ func sourceCodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	quick.Highlight(w, b.String(), "go", "html", "monokai")
+	var lines [][2]int
+	if line > 0 {
+		lines = append(lines, [2]int{line, line})
+	}
+
+	lexer := lexers.Get("go")
+	iterator, err := lexer.Tokenise(nil, b.String())
+	style := styles.Get("github")
+	if style == nil {
+		style = styles.Fallback
+	}
+
+	formatter := html.New(
+		html.TabWidth(2),
+		html.WithLineNumbers(true),
+		html.HighlightLines(lines),
+	)
+	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(w, "<style>pre { font-size: 1.2em; }</style>")
+	formatter.Format(w, style, iterator)
 }
 
 func devMw(app http.Handler) http.HandlerFunc {
@@ -91,8 +119,18 @@ func makeLinks(stack string) string {
 			}
 		}
 
-		lines[li] = `<a href="/debug/?path=` + filename + `"/>` +
-			filename + `</a>` + line[len(filename)+1:]
+		var lineStr strings.Builder
+		for i := len(filename) + 1; i < len(line); i++ {
+			if line[i] < '0' || line[i] > '9' {
+				break
+			}
+			lineStr.WriteByte(line[i])
+		}
+
+		lines[li] = `<a href="/debug/?path=` + filename +
+			`&line=` + lineStr.String() + `"/>` +
+			filename + ":" + lineStr.String() + `</a>` +
+			line[len(filename)+1+len(lineStr.String()):]
 	}
 
 	return strings.Join(lines, "\n")
