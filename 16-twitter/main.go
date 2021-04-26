@@ -9,9 +9,11 @@ import (
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -21,13 +23,15 @@ const (
 
 func main() {
 	var (
-		keyFile   string
-		usersFile string
-		tweetID   string
+		keyFile    string
+		usersFile  string
+		tweetID    string
+		numWinners int
 	)
 	flag.StringVar(&keyFile, "key", ".env", "the file where you store your consumer key and secret for the twitter api.")
 	flag.StringVar(&usersFile, "users", "users.csv", "the file where users who have retweeted the tweet are stored. this will be created if it does not exist.")
 	flag.StringVar(&tweetID, "tweet", "tweetId", "the id of the Tweet you wish to find retweeters of.")
+	flag.IntVar(&numWinners, "winners", 0, "the number of winners to pick for the contest.")
 	flag.Parse()
 
 	key, secret, err := keys(keyFile)
@@ -49,6 +53,17 @@ func main() {
 	allUsernames := merge(newUsernames, existUsernames)
 	if err = writeUsers(usersFile, allUsernames); err != nil {
 		log.Fatal(err)
+	}
+
+	if numWinners == 0 {
+		return
+	}
+
+	existUsernames = existing(usersFile)
+	winners := pickWinners(existUsernames, numWinners)
+	fmt.Println("the winners are:")
+	for _, username := range winners {
+		fmt.Printf("\t%s\n", username)
 	}
 }
 
@@ -181,4 +196,16 @@ func writeUsers(usersFile string, users []string) error {
 	}
 
 	return nil
+}
+
+func pickWinners(users []string, numWinners int) []string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	perm := r.Perm(len(users))
+	winners := perm[:numWinners]
+	winnerUsers := make([]string, 0, numWinners)
+	for _, idx := range winners {
+		winnerUsers = append(winnerUsers, users[idx])
+	}
+
+	return winnerUsers
 }
