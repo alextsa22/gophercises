@@ -24,3 +24,4 @@ Exercises
 0. [Panic/Recover Middleware](14-recover)
 0. [Panic/Recover Middleware with Chroma](15-recover-chroma)
 0. [Twitter Contest CLI](16-twitter)
+0. [Secrets CLI & API](17-secret)
