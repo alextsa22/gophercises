@@ -7,17 +7,38 @@ import (
 )
 
 func main() {
-	demoKey := "demo_key"
-
-	v := secret.NewVault("fake key")
-	if err := v.Set(demoKey, "demo_value"); err != nil {
-		log.Fatal(err)
-	}
-
-	value, err := v.Get(demoKey)
+	v := secret.NewVault("my-fake-key", ".secrets")
+	err := v.Set("demo_key1", "123 some crazy value")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("value:", value)
+	err = v.Set("demo_key2", "456 some crazy value")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = v.Set("demo_key3", "789 some crazy value")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	plain, err := v.Get("demo_key1")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Plain:", plain)
+	plain, err = v.Get("demo_key2")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Plain:", plain)
+	plain, err = v.Get("demo_key3")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Plain:", plain)
 }
