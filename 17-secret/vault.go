@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alextsa22/gophercises/17-secret/encrypt"
 	"io"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/alextsa22/gophercises/17-secret/encrypt"
 )
 
 type vault struct {
@@ -22,6 +23,7 @@ func NewVault(encodingKey, filepath string) *vault {
 	return &vault{
 		encodingKey: encodingKey,
 		filepath:    filepath,
+		mutex:       &sync.Mutex{},
 	}
 }
 
@@ -34,20 +36,18 @@ func (v *vault) loadKeyValues() error {
 	defer f.Close()
 
 	var sb strings.Builder
-	_, err = io.Copy(&sb, f)
+	if _, err = io.Copy(&sb, f); err != nil {
+		return err
+	}
+
+	decryptedJson, err := encrypt.Decrypt(v.encodingKey, sb.String())
 	if err != nil {
 		return err
 	}
 
-	decryptedJSON, err := encrypt.Decrypt(v.encodingKey, sb.String())
-	if err != nil {
-		return err
-	}
-
-	r := strings.NewReader(decryptedJSON)
-	dec := json.NewDecoder(r)
-	err = dec.Decode(&v.keyValues)
-	if err != nil {
+	r := strings.NewReader(decryptedJson)
+	decoder := json.NewDecoder(r)
+	if err = decoder.Decode(&v.keyValues); err != nil {
 		return err
 	}
 
@@ -56,13 +56,12 @@ func (v *vault) loadKeyValues() error {
 
 func (v *vault) saveKeyValues() error {
 	var sb strings.Builder
-	enc := json.NewEncoder(&sb)
-	err := enc.Encode(v.keyValues)
-	if err != nil {
+	encoder := json.NewEncoder(&sb)
+	if err := encoder.Encode(v.keyValues); err != nil {
 		return err
 	}
 
-	encryptedJSON, err := encrypt.Encrypt(v.encodingKey, sb.String())
+	encryptedJson, err := encrypt.Encrypt(v.encodingKey, sb.String())
 	if err != nil {
 		return err
 	}
@@ -73,8 +72,7 @@ func (v *vault) saveKeyValues() error {
 	}
 	defer f.Close()
 
-	_, err = fmt.Fprint(f, encryptedJSON)
-	if err != nil {
+	if _, err = fmt.Fprint(f, encryptedJson); err != nil {
 		return err
 	}
 
@@ -85,14 +83,15 @@ func (v *vault) Get(key string) (string, error) {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 
-	err := v.loadKeyValues()
-	if err != nil {
+	if err := v.loadKeyValues(); err != nil {
 		return "", err
 	}
+
 	value, ok := v.keyValues[key]
 	if !ok {
 		return "", errors.New("secret: no value for that key")
 	}
+
 	return value, nil
 }
 
@@ -100,11 +99,10 @@ func (v *vault) Set(key, value string) error {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 
-	err := v.loadKeyValues()
-	if err != nil {
+	if err := v.loadKeyValues(); err != nil {
 		return err
 	}
+
 	v.keyValues[key] = value
-	err = v.saveKeyValues()
-	return err
+	return v.saveKeyValues()
 }

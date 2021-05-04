@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
-	secret "github.com/alextsa22/gophercises/17-secret"
 	"log"
+
+	secret "github.com/alextsa22/gophercises/17-secret"
 )
 
 func main() {
 	v := secret.NewVault("my-fake-key", ".secrets")
+	
 	err := v.Set("demo_key1", "123 some crazy value")
 	if err != nil {
 		log.Fatal(err)
@@ -27,18 +29,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("plain:", plain)
 
-	fmt.Println("Plain:", plain)
 	plain, err = v.Get("demo_key2")
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("plain:", plain)
 
-	fmt.Println("Plain:", plain)
 	plain, err = v.Get("demo_key3")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("Plain:", plain)
+	fmt.Println("plain:", plain)
 }
