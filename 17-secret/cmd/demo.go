@@ -9,7 +9,7 @@ import (
 
 func main() {
 	v := secret.NewVault("my-fake-key", ".secrets")
-	
+
 	err := v.Set("demo_key1", "123 some crazy value")
 	if err != nil {
 		log.Fatal(err)
