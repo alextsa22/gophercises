@@ -40,13 +40,13 @@ func WithMode(mode Mode) func() []string {
 
 // Transform will take the provided image and apply a primitive
 // transformation to it, then return a reader to the resulting image.
-func Transform(image io.Reader, numShapes int, opts ...func()) (io.Reader, error) {
-	in, err := tempFile("__in_", "jpg")
+func Transform(image io.Reader, ext string, numShapes int, opts ...func()) (io.Reader, error) {
+	in, err := tempFile("__in_", ext)
 	if err != nil {
 		return nil, fmt.Errorf("tempFile(): failed to create temporary input fule: %v", err)
 	}
 	defer os.Remove(in.Name())
-	out, err := tempFile("__out_", "jpg")
+	out, err := tempFile("__out_", ext)
 	if err != nil {
 		return nil, fmt.Errorf("tempFile(): failed to create temporary output file: %v", err)
 	}
@@ -56,11 +56,11 @@ func Transform(image io.Reader, numShapes int, opts ...func()) (io.Reader, error
 		return nil, fmt.Errorf("io.Copy(): failed to copy image into temp input file: %v", err)
 	}
 
-	stdCombo, err := primitive(in.Name(), out.Name(), numShapes, ModeCombo)
+	// stdCombo
+	_, err = primitive(in.Name(), out.Name(), numShapes, ModeCombo)
 	if err != nil {
 		return nil, fmt.Errorf("primitive(): failed to run the primitive command: %v", err)
 	}
-	fmt.Println(stdCombo)
 
 	buf := bytes.NewBuffer(nil)
 	if _, err = io.Copy(buf, out); err != nil {
