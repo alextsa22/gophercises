@@ -40,7 +40,12 @@ func WithMode(mode Mode) func() []string {
 
 // Transform will take the provided image and apply a primitive
 // transformation to it, then return a reader to the resulting image.
-func Transform(image io.Reader, ext string, numShapes int, opts ...func()) (io.Reader, error) {
+func Transform(image io.Reader, ext string, numShapes int, opts ...func() []string) (io.Reader, error) {
+	var args []string
+	for _, opt := range opts {
+		args = append(args, opt()...)
+	}
+
 	in, err := tempFile("__in_", ext)
 	if err != nil {
 		return nil, fmt.Errorf("tempFile(): failed to create temporary input fule: %v", err)
@@ -57,7 +62,7 @@ func Transform(image io.Reader, ext string, numShapes int, opts ...func()) (io.R
 	}
 
 	// stdCombo
-	_, err = primitive(in.Name(), out.Name(), numShapes, ModeCombo)
+	_, err = primitive(in.Name(), out.Name(), numShapes, args...)
 	if err != nil {
 		return nil, fmt.Errorf("primitive(): failed to run the primitive command: %v", err)
 	}
@@ -69,14 +74,12 @@ func Transform(image io.Reader, ext string, numShapes int, opts ...func()) (io.R
 	return buf, nil
 }
 
-func primitive(in, out string, numShapes int, mode Mode) (string, error) {
-	args := fmt.Sprintf("-i %s -o %s -n %d -m %d", in, out, numShapes, mode)
-	cmd := exec.Command("primitive", strings.Fields(args)...)
+func primitive(in, out string, numShapes int, args ...string) (string, error) {
+	argStr := fmt.Sprintf("-i %s -o %s -n %d", in, out, numShapes)
+	args = append(strings.Fields(argStr), args...)
+	cmd := exec.Command("primitive", args...)
 	bs, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("CombineOutput(): %v", err)
-	}
-	return string(bs), nil
+	return string(bs), err
 }
 
 func tempFile(prefix, ext string) (*os.File, error) {
@@ -84,6 +87,9 @@ func tempFile(prefix, ext string) (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(tmp.Name())
+	defer func() {
+		tmp.Close()
+		os.Remove(tmp.Name())
+	}()
 	return os.Create(fmt.Sprintf("%s.%s", tmp.Name(), ext))
 }

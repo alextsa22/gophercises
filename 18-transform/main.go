@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/alextsa22/gophercises/18-transform/primitive"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
@@ -34,29 +36,47 @@ func main() {
 		defer file.Close()
 
 		ext := filepath.Ext(header.Filename)[1:]
-		switch ext {
-		case "jpg":
-			fallthrough
-		case "jpeg":
-			ext = "jpeg"
-		case "png":
-		default:
-			log.Printf("invalid image type: %s", ext)
-			http.Error(w, "invalid image type", http.StatusBadRequest)
-			return
-		}
-
-		out, err := primitive.Transform(file, ext, 10)
+		out, err := primitive.Transform(file, ext, 10, primitive.WithMode(primitive.ModeCircle))
 		if err != nil {
 			log.Printf("Transform(): %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		w.Header().Set("Content-Type", fmt.Sprintf("image/%s", ext))
-		io.Copy(w, out)
+		outFile, err := tempFile("__out_", ext)
+		if err != nil {
+			log.Printf("tempFile(): %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer outFile.Close()
+
+		if _, err = io.Copy(outFile, out); err != nil {
+			log.Printf("io.Copy(): %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		redirectUrl := fmt.Sprintf("/%s", outFile.Name())
+		http.Redirect(w, r, redirectUrl, http.StatusFound)
 	})
+	mux.Handle(
+		"/img/",
+		http.StripPrefix("/img/", http.FileServer(http.Dir("./img/"))),
+	)
 
 	log.Println("server start...")
 	log.Fatal(http.ListenAndServe(":8080", mux))
+}
+
+func tempFile(prefix, ext string) (*os.File, error) {
+	tmp, err := ioutil.TempFile("./img/", prefix)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		tmp.Close()
+		os.Remove(tmp.Name())
+	}()
+	return os.Create(fmt.Sprintf("%s.%s", tmp.Name(), ext))
 }
