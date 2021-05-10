@@ -3,27 +3,38 @@ package main
 import (
 	"fmt"
 	"github.com/alextsa22/gophercises/18-transform/primitive"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-var html = `<html>
-<body>
-	<form action="/upload" method="POST" enctype="multipart/form-data">
-		<input type="file" name="image">
-		<button type="submit">upload image</button>
-	</form>
-</body>
-</html>`
+var (
+	uploadForm = `<html>
+			<body>
+				<form action="/upload" method="POST" enctype="multipart/form-data">
+					<input type="file" name="image">
+					<button type="submit">upload image</button>
+				</form>
+			</body>
+			</html>`
+
+	imagesHTML = `<html><body>
+			{{range .}}
+				<img src="/{{.}}">
+			{{end}}
+			</body></html>`
+	imagesTpl = template.Must(template.New("").Parse(imagesHTML))
+)
 
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, html)
+		fmt.Fprint(w, uploadForm)
 	})
 	mux.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -36,37 +47,42 @@ func main() {
 		defer file.Close()
 
 		ext := filepath.Ext(header.Filename)[1:]
-		out, err := primitive.Transform(file, ext, 10, primitive.WithMode(primitive.ModeCircle))
-		if err != nil {
-			log.Printf("Transform(): %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
 
-		outFile, err := tempFile("__out_", ext)
-		if err != nil {
-			log.Printf("tempFile(): %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		defer outFile.Close()
+		circleImg, _ := generateImage(file, ext, 10, primitive.ModeCircle)
+		file.Seek(0, 0)
+		rectImg, _ := generateImage(file, ext, 10, primitive.ModeRect)
+		file.Seek(0, 0)
+		polygonImg, _ := generateImage(file, ext, 10, primitive.ModePolygon)
 
-		if _, err = io.Copy(outFile, out); err != nil {
-			log.Printf("io.Copy(): %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+		images := []string{circleImg, rectImg, polygonImg}
+		for i, img := range images {
+			images[i] = strings.ReplaceAll(img, `\`, `/`)
 		}
-
-		redirectUrl := fmt.Sprintf("/%s", outFile.Name())
-		http.Redirect(w, r, redirectUrl, http.StatusFound)
+		imagesTpl.Execute(w, images)
 	})
 	mux.Handle(
 		"/img/",
-		http.StripPrefix("/img/", http.FileServer(http.Dir("./img/"))),
+		http.StripPrefix("/img", http.FileServer(http.Dir("./img/"))),
 	)
 
 	log.Println("server start...")
 	log.Fatal(http.ListenAndServe(":8080", mux))
+}
+
+func generateImage(r io.Reader, ext string, numShapes int, mode primitive.Mode) (string, error) {
+	out, err := primitive.Transform(r, ext, numShapes, primitive.WithMode(mode))
+	if err != nil {
+		return "", fmt.Errorf("primitive.Transform(): %v", err)
+	}
+
+	outFile, err := tempFile("", ext)
+	if err != nil {
+		return "", fmt.Errorf("tempFile(); %v", err)
+	}
+	defer outFile.Close()
+
+	_, err = io.Copy(outFile, out)
+	return outFile.Name(), err
 }
 
 func tempFile(prefix, ext string) (*os.File, error) {
