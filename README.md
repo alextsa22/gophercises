@@ -26,3 +26,4 @@ Exercises
 0. [Twitter Contest CLI](16-twitter)
 0. [Secrets CLI & API](17-secret)
 0. [Image Transformer](18-transform)
+0. [Building Images](19-image)
