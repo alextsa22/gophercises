@@ -3,8 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
-	
+
 	"github.com/jung-kurt/gofpdf"
+)
+
+const (
+	bannerHeight = 94.0
+	xIndent      = 45.0
 )
 
 func main() {
@@ -18,50 +23,60 @@ func main() {
 	fmt.Printf("width=%v, height=%v\n", width, height)
 	pdf.AddPage()
 
-	// Basic Text Stuff
-	pdf.MoveTo(0, 0)
-	pdf.SetFont("arial", "B", 30)
-	_, lineHt := pdf.GetFontSize()
-	pdf.SetTextColor(255, 0, 0)
-	pdf.Text(0, lineHt, "Hello, world!")
-	pdf.MoveTo(0, lineHt*2.0)
-
-	pdf.SetFont("times", "", 18)
-	pdf.SetTextColor(100, 100, 100)
-	_, lineHt = pdf.GetFontSize()
-	text := "Here is some text. If it is too long it will be word " +
-		"wrapped automatically. If there is a new line it will be\n" +
-		"wrapped as well (unlike other ways of writing text in gofpdf)."
-	pdf.MultiCell(0, lineHt, text, gofpdf.BorderNone, gofpdf.AlignRight, false)
-
-	// Basic Shapes
-	pdf.SetFillColor(0, 255, 0)
-	pdf.SetDrawColor(0, 0, 255)
-	pdf.Rect(10, 100, 100, 100, "FD")
-	pdf.SetFillColor(100, 200, 200)
+	// banner
+	pdf.SetFillColor(103, 60, 79)
 	pdf.Polygon([]gofpdf.PointType{
-		{110, 250},
-		{160, 300},
-		{110, 350},
-		{60, 300},
-		{70, 230},
+		{0, 0},
+		{width, 0},
+		{width, bannerHeight},
+		{0, bannerHeight * 0.9},
+	}, "F")
+	pdf.Polygon([]gofpdf.PointType{
+		{0, height},
+		{0, height - (bannerHeight * 0.2)},
+		{width, height - (bannerHeight * 0.1)},
+		{width, height},
 	}, "F")
 
-	pdf.ImageOptions(
-		"images/jump.png",
-		275, 275, 92, 0,
+	// banner - invoice
+	pdf.SetFont("arial", "B", 40)
+	pdf.SetTextColor(255, 255, 255)
+	_, lineHeight := pdf.GetFontSize()
+	pdf.Text(xIndent, bannerHeight-(bannerHeight/2)+lineHeight/3.1, "INVOICE")
+
+	// banner - phone, email, domain
+	pdf.SetFont("arial", "", 12)
+	pdf.SetTextColor(255, 255, 255)
+	_, lineHeight = pdf.GetFontSize()
+	pdf.MoveTo(width-xIndent-2*124, (bannerHeight-(lineHeight*1.5*3.0))/2)
+	pdf.MultiCell(
+		124.0,
+		lineHeight*1.5,
+		"(123) 456-7890\njon@calhoun.io\nGophercises.com",
+		gofpdf.BorderNone,
+		gofpdf.AlignRight,
 		false,
-		gofpdf.ImageOptions{
-			ReadDpi: true,
-		},
-		0,
-		"",
 	)
 
-	// Grid
-	drawGrid(pdf)
+	// banner - address
+	pdf.SetFont("arial", "", 12)
+	pdf.SetTextColor(255, 255, 255)
+	_, lineHeight = pdf.GetFontSize()
+	pdf.MoveTo(width-xIndent-124, (bannerHeight-(lineHeight*1.5*3.0))/2)
+	pdf.MultiCell(
+		124.0,
+		lineHeight*1.5,
+		"123 Fake St\nSome Town, PA\n12345",
+		gofpdf.BorderNone,
+		gofpdf.AlignRight,
+		false,
+	)
 
-	if err := pdf.OutputFileAndClose("p1.pdf"); err != nil {
+
+	// Grid
+	// drawGrid(pdf)
+
+	if err := pdf.OutputFileAndClose("p2.pdf"); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -73,12 +88,18 @@ func drawGrid(pdf *gofpdf.Fpdf) {
 	pdf.SetDrawColor(200, 200, 200)
 
 	for x := 0.0; x < width; x = x + (width / 20.0) {
+		pdf.SetTextColor(200, 200, 200)
 		pdf.Line(x, 0, x, height)
 		_, lineHt := pdf.GetFontSize()
 		pdf.Text(x, lineHt, fmt.Sprintf("%d", int(x)))
 	}
 
 	for y := 0.0; y < height; y = y + (width / 20.0) {
+		if y < bannerHeight*0.9 {
+			pdf.SetTextColor(200, 200, 200)
+		} else {
+			pdf.SetTextColor(80, 80, 80)
+		}
 		pdf.Line(0, y, width, y)
 		pdf.Text(0, y, fmt.Sprintf("%d", int(y)))
 	}
