@@ -28,3 +28,8 @@ Exercises
 0. [Image Transformer](18-transform)
 0. [Building Images](19-image)
 0. [Building PDFs](20-pdf)
+
+Certificate
+-----------
+
+![course certificate](certificate.jpg)
